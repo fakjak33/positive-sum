@@ -8,23 +8,25 @@ This is a substantive decision, not a taste one. An app that looks like a casino
 
 ## Colour
 
-Dark is the default and the designed-for case. Light mode is supported and tested, not an afterthought.
+Pure black, pure white, maximum contrast. Dark is the default and the designed-for case; light mode inverts to pure white and is tested.
 
 ```
---bg              #0B0D0F   page
---surface         #12161A   cards
---surface-raised  #1A1F25   popovers, tooltips
---border          #262D35   hairlines
---text            #F2F0EB   primary (off-white, never pure #FFF)
---text-muted      #9BA4AE   secondary
---text-subtle     #6B747E   captions, metadata
+--bg              #000000   page
+--surface         #0A0A0A   cards
+--surface-raised  #161616   popovers, tooltips
+--border          #272727   hairlines
+--text            #FFFFFF   primary — 21:1 on black
+--text-muted      #A8A8A8   secondary
+--text-subtle     #7D7D7D   captions, metadata — 4.8:1, the tightest pair
 
---gain            #10B981   emerald — positive outcomes
---loss            #E5484D   vermilion — negative outcomes
---rare            #D4A24C   gold — RESERVED for tail events only
---market          #2B5FA8   deep blue — the index / aggregate
---house           #8B5CF6   violet — casino-side series
+--gain            #00E58C   positive outcomes — 12.6:1
+--loss            #FF4D57   negative outcomes — 6.5:1
+--rare            #FFC64D   RESERVED for tail events only
+--market          #5B9DFF   the index / aggregate
+--house           #A78BFA   casino-side series
 ```
+
+The semantics are brightened relative to a conventional dark theme because on pure black the usual muted variants go muddy. All verified against WCAG AA at their rendered sizes.
 
 Rules that are enforced, not suggested:
 
@@ -37,15 +39,18 @@ Light mode inverts the neutrals and darkens the semantics (`--gain` → `#047857
 
 ## Typography
 
+Everything is monospace — a modernist, terminal-adjacent voice rather than an editorial one.
+
 | Role | Face | Notes |
 |---|---|---|
-| Display / headlines | Instrument Serif | Editorial voice; only at 32px+ |
-| UI / body | Inter | Variable, `feature-settings: 'cv05','ss01'` |
-| Numerals / data | JetBrains Mono | **All** figures, so columns align |
+| Display / headlines / figures | Martian Mono | Wide geometric modernist face, 700–800 weight, `-0.045em` tracking |
+| UI / body | JetBrains Mono | 500–600 weight; carries all long-form prose |
+
+Two faces rather than one, for a reason worth stating: Martian Mono is superb at display sizes and in bold, and genuinely punishing to read in paragraphs. JetBrains Mono keeps the body legible at small sizes. Both are monospace, so the system reads as one voice.
 
 Self-hosted through `next/font` with `display: swap` and subsetting — required for offline support, and it removes a third-party request.
 
-Scale (1.25 ratio): 12 · 14 · 16 · 20 · 25 · 31 · 39 · 49 · 61. Body 16/1.6. Measure capped at 68ch. Statistics render at 61px in mono with `-0.02em` tracking.
+Scale (1.25 ratio): 12 · 14 · 15 · 19 · 24 · 30 · 37 · 46 · 58. Body 15/1.7 — monospace needs more leading than proportional text. **Measure capped at 58ch**, shorter than the 68ch that suits proportional type, because monospace runs wide.
 
 ## Space & form
 
