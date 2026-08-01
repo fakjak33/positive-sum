@@ -2,8 +2,8 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "headers": [
     {
-      "//": "Next writes metadata images as extensionless files (…/opengraph-image). A static host infers content type from the extension, so without this they are served as application/octet-stream and some link-preview scrapers refuse to render them. Verified against the live deployment.",
-      "source": "/(.*)opengraph-image",
+      "//": "Next writes metadata images as extensionless files (…/opengraph-image). A static host infers content type from the extension, so without this they are served as application/octet-stream and some link-preview scrapers refuse to render them. The pattern must be an explicit segment match — a wildcard immediately followed by literal text ('/(.*)opengraph-image') silently matches nothing. Verified against the live deployment.",
+      "source": "/analogies/:slug/opengraph-image",
       "headers": [
         { "key": "Content-Type", "value": "image/png" },
         { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }
