@@ -116,7 +116,17 @@ The service worker only registers in production, so offline support must be test
 
 ### Anywhere else
 
-`next build` output runs on any Node host. There is no database, no API and no secrets.
+`next build` writes a plain folder to `out/`. Any static host serves it — GitHub Pages, Netlify, Cloudflare Pages, an S3 bucket. There is no database, no API and no secrets.
+
+Two things to know if you move hosts:
+
+- **`trailingSlash`.** GitHub Pages serves directories rather than extensionless files, so it needs `trailingSlash: true` in `next.config.ts`. Vercel does not, and setting it there breaks other things — see the comment in that file.
+- **Share cards are pre-generated.** `npm run og` renders 32 real `.png` files into `public/og`, which are committed. This deliberately avoids Next's `opengraph-image.tsx` convention, which emits *extensionless* files that static hosts serve as `application/octet-stream`; link-preview scrapers then refuse to render them. Regenerate after editing any analogy headline.
+
+### Two deployment traps worth knowing
+
+- **`vercel.json` accepts no comments.** It is validated against a strict schema, and an unknown key (such as a `"//"` comment) fails the build. Worse, the live site keeps serving the previous build, so nothing *looks* broken — the failure is visible only in the deployment status.
+- **Check deployment status, not just the site.** `gh api repos/<owner>/<repo>/deployments` plus the statuses endpoint will tell you whether the build actually shipped.
 
 ## Testing
 
