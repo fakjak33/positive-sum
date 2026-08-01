@@ -11,6 +11,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "data": "node scripts/prepare-data.mjs",
+    "og": "node scripts/make-og.mjs",
+    "icons": "node scripts/make-icons.mjs",
     "verify": "npm run typecheck && npm run lint && npm run test && npm run build"
   },
   "dependencies": {
