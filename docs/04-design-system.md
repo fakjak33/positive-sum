@@ -65,7 +65,7 @@ The one place the app permits theatre is the reveal beat — 500 squares resolvi
 `Button` (primary/secondary/ghost, 44px min touch target) · `Slider` (keyboard: arrows, shift+arrows, Home/End; touch target 44px) · `Toggle` · `Tabs` · `Popover` · `Tooltip` (hover *and* focus *and* tap) · `Sheet` (mobile nav/filters) · `Skeleton`
 
 ### Data display
-- **`Statistic`** — the hero number. Mono, animated count-up, optional unit and delta. Respects reduced motion.
+- **`Statistic`** — the hero figure. Mono, CSS-only reveal, optional caption. Deliberately *not* a numeric count-up: many headlines are not numbers ("2× Kelly ≈ 0", "Same average, different ending"), so an animated counter was both dead code and the wrong idea for the content. Being CSS-only, it respects reduced motion through the global rule with no JavaScript involved.
 - **`SourceCard`** — publisher, date, sample period, assumptions, external link. Collapsed by default on mobile, expanded on desktop. Renders a `contested` variant with both sides side by side.
 - **`AnalogyCard`** — index tile: statistic, title, category chip, interactive indicator, bookmark toggle.
 - **`ReframePanel`** — the works/breaks-down pair. Enforces equal width and equal weight; accepts no "primary" prop by design, so no caller can visually favour one side.

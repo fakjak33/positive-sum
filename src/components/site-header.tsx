@@ -42,10 +42,30 @@ export function SiteHeader() {
         </nav>
 
         <div className="ml-auto flex items-center gap-1">
+          <Link
+            href="/bookmarks"
+            aria-label="Saved analogies"
+            aria-current={pathname === "/bookmarks" ? "page" : undefined}
+            className={`grid size-11 place-items-center rounded-md transition-colors hover:bg-surface hover:text-text ${
+              pathname === "/bookmarks" ? "text-rare" : "text-text-muted"
+            }`}
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinejoin="round"
+              className="size-[18px]"
+              aria-hidden="true"
+            >
+              <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+            </svg>
+          </Link>
           <ThemeToggle />
           <button
             type="button"
-            className="grid size-9 place-items-center rounded-md text-text-muted transition-colors hover:bg-surface hover:text-text md:hidden"
+            className="grid size-11 place-items-center rounded-md text-text-muted transition-colors hover:bg-surface hover:text-text md:hidden"
             onClick={() => setOpen((v) => !v)}
             aria-expanded={open}
             aria-controls="mobile-nav"

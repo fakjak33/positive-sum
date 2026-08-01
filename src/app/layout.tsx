@@ -3,6 +3,7 @@ import { Inter, Instrument_Serif, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
+import { ServiceWorker } from "@/components/service-worker";
 import { SITE } from "@/lib/site";
 
 // Self-hosted via next/font — no third-party request at runtime, which
@@ -35,6 +36,14 @@ export const metadata: Metadata = {
   description: SITE.description,
   applicationName: SITE.name,
   manifest: "/manifest.webmanifest",
+  appleWebApp: { capable: true, title: SITE.name, statusBarStyle: "black-translucent" },
+  icons: {
+    icon: [
+      { url: "/icons/icon.svg", type: "image/svg+xml" },
+      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+    ],
+    apple: [{ url: "/icons/apple-icon.png", sizes: "180x180" }],
+  },
   openGraph: {
     type: "website",
     siteName: SITE.name,
@@ -104,6 +113,7 @@ export default function RootLayout({
           {children}
         </main>
         <SiteFooter />
+        <ServiceWorker />
       </body>
     </html>
   );

@@ -1,27 +1,38 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 
 type Theme = "dark" | "light";
 
-/**
- * Theme toggle. The initial value is already applied to <html> by the inline
- * script in the root layout, so this only has to read it back and keep the
- * two in sync — that ordering is what avoids a flash on load.
- */
-export function ThemeToggle() {
-  const [theme, setTheme] = useState<Theme>("dark");
-  const [mounted, setMounted] = useState(false);
+const EVENT = "ps-theme-changed";
 
-  useEffect(() => {
-    const current = document.documentElement.getAttribute("data-theme");
-    setTheme(current === "light" ? "light" : "dark");
-    setMounted(true);
-  }, []);
+/**
+ * The theme lives on the <html> element, set before paint by the inline script
+ * in the root layout. That attribute — not React state — is the source of
+ * truth, so this subscribes to it as an external store rather than mirroring
+ * it into component state.
+ */
+function subscribe(onChange: () => void) {
+  window.addEventListener(EVENT, onChange);
+  return () => window.removeEventListener(EVENT, onChange);
+}
+
+function getSnapshot(): Theme {
+  return document.documentElement.getAttribute("data-theme") === "light"
+    ? "light"
+    : "dark";
+}
+
+function getServerSnapshot(): Theme {
+  // Matches the default on <html>; the inline script corrects it before paint.
+  return "dark";
+}
+
+export function ThemeToggle() {
+  const theme = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
   function toggle() {
     const next: Theme = theme === "dark" ? "light" : "dark";
-    setTheme(next);
     document.documentElement.setAttribute("data-theme", next);
     try {
       localStorage.setItem("ps-theme", next);
@@ -29,18 +40,15 @@ export function ThemeToggle() {
       // Private browsing with storage disabled — the toggle still works for
       // this session, it just won't be remembered.
     }
+    window.dispatchEvent(new CustomEvent(EVENT));
   }
 
   return (
     <button
       type="button"
       onClick={toggle}
-      className="grid size-9 place-items-center rounded-md text-text-muted transition-colors hover:bg-surface hover:text-text"
-      aria-label={
-        mounted
-          ? `Switch to ${theme === "dark" ? "light" : "dark"} theme`
-          : "Switch theme"
-      }
+      className="grid size-11 place-items-center rounded-md text-text-muted transition-colors hover:bg-surface hover:text-text"
+      aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
     >
       <svg
         viewBox="0 0 24 24"
