@@ -11,9 +11,14 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   output: "export",
 
-  // Static hosts (GitHub Pages in particular) serve directories, not
-  // extensionless files, so emit /about/index.html rather than /about.html.
-  trailingSlash: true,
+  // NOTE: do not set `trailingSlash: true` here without re-testing share
+  // cards. It makes the host redirect the extensionless metadata image
+  // (/analogies/<slug>/opengraph-image) into a 308 loop, which silently
+  // breaks every Open Graph preview. Verified against the live deployment.
+  //
+  // If this site is ever moved to GitHub Pages — which serves directories
+  // rather than extensionless files — trailingSlash will be needed, and the
+  // OG images will need a real .png extension to compensate.
 
   images: {
     // No image optimisation server exists in a static export. The site uses
