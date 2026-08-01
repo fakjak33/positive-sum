@@ -205,11 +205,19 @@ async function buildShiller() {
 }
 
 // ===================================================================
-// 4. S&P 500 constituent calendar-year returns
+// 4. S&P 500 constituent calendar-year returns, MANY years
 // ===================================================================
-// Powers the roulette interactive: 500 real companies, real outcomes.
-async function buildConstituents(year) {
-  console.log(`Constituent ${year} calendar-year returns…`);
+// Powers the roulette, diversification and concentration interactives.
+//
+// A single year is a misleading sample — 2025 had an unusually high share of
+// winners, and building the whole argument on it would be exactly the
+// cherry-picking this site criticises. So we pull every year we can and let
+// the reader pick one, take a random one, or see all of them pooled.
+//
+// One request per ticker covers the whole history (monthly interval), so this
+// costs no more calls than the single-year version did.
+async function buildConstituents(firstYear, lastYear) {
+  console.log(`Constituent annual returns, ${firstYear}–${lastYear}…`);
 
   const csv = await getText(
     "https://raw.githubusercontent.com/datasets/s-and-p-500-companies/main/data/constituents.csv"
@@ -233,10 +241,13 @@ async function buildConstituents(year) {
 
   console.log(`    ${members.length} constituents listed`);
 
-  const p1 = Math.floor(Date.UTC(year - 1, 11, 1) / 1000);
-  const p2 = Math.floor(Date.UTC(year + 1, 0, 15) / 1000);
+  const years = [];
+  for (let y = firstYear; y <= lastYear; y++) years.push(y);
 
-  const out = [];
+  const p1 = Math.floor(Date.UTC(firstYear - 1, 10, 1) / 1000);
+  const p2 = Math.floor(Date.UTC(lastYear + 1, 0, 15) / 1000);
+
+  const rows = [];
   const failed = [];
   const CONCURRENCY = 6;
 
@@ -251,25 +262,25 @@ async function buildConstituents(year) {
       const closes = r.indicators.adjclose?.[0]?.adjclose ?? [];
       const stamps = r.timestamp ?? [];
 
-      // Last close of the prior December, and last close of the target year.
-      let start = null;
-      let end = null;
+      // Last usable close of each December, keyed by year.
+      const decClose = new Map();
       for (let i = 0; i < stamps.length; i++) {
-        if (closes[i] == null) continue;
+        if (closes[i] == null || closes[i] <= 0) continue;
         const d = new Date(stamps[i] * 1000);
-        const y = d.getUTCFullYear();
-        const mo = d.getUTCMonth();
-        if (y === year - 1 && mo === 11) start = closes[i];
-        if (y === year) end = closes[i];
+        if (d.getUTCMonth() === 11) decClose.set(d.getUTCFullYear(), closes[i]);
       }
-      if (start == null || end == null || start <= 0) throw new Error("incomplete");
 
-      out.push({
-        symbol: m.symbol,
-        name: m.name,
-        sector: m.sector,
-        return: Number(((end - start) / start).toFixed(4)),
+      // Dec-to-Dec return for each year the ticker actually traded.
+      const returns = years.map((y) => {
+        const start = decClose.get(y - 1);
+        const end = decClose.get(y);
+        if (start == null || end == null) return null;
+        return Number(((end - start) / start).toFixed(4));
       });
+
+      if (returns.every((v) => v === null)) throw new Error("no overlap");
+
+      rows.push({ symbol: m.symbol, name: m.name, sector: m.sector, returns });
     } catch {
       failed.push(m.symbol);
     }
@@ -280,39 +291,68 @@ async function buildConstituents(year) {
     if (i % 60 === 0) process.stdout.write(`    …${i}/${members.length}\r`);
   }
 
-  out.sort((a, b) => b.return - a.return);
-  const positive = out.filter((d) => d.return > 0).length;
-  const median = out.length
-    ? out[Math.floor(out.length / 2)].return
-    : null;
-  const mean = out.reduce((s, d) => s + d.return, 0) / (out.length || 1);
+  rows.sort((a, b) => a.symbol.localeCompare(b.symbol));
 
+  // Per-year aggregates, computed here so the client never has to.
+  const perYear = years.map((y, yi) => {
+    const vals = rows.map((r) => r.returns[yi]).filter((v) => v !== null);
+    if (vals.length === 0) {
+      return { year: y, count: 0, positive: 0, positiveShare: null, meanReturn: null, medianReturn: null };
+    }
+    const sorted = vals.slice().sort((a, b) => a - b);
+    const positive = vals.filter((v) => v > 0).length;
+    return {
+      year: y,
+      count: vals.length,
+      positive,
+      positiveShare: Number((positive / vals.length).toFixed(4)),
+      meanReturn: Number((vals.reduce((s, v) => s + v, 0) / vals.length).toFixed(4)),
+      medianReturn: Number(sorted[Math.floor(sorted.length / 2)].toFixed(4)),
+    };
+  });
+
+  // Pooled across every year — the "all years" view. Each company-year is one
+  // observation, which is the honest way to answer "what does a random pick in
+  // a random year look like".
+  const pooled = rows.flatMap((r) => r.returns.filter((v) => v !== null));
+  const pooledSorted = pooled.slice().sort((a, b) => a - b);
+  const pooledPositive = pooled.filter((v) => v > 0).length;
+
+  const usable = perYear.filter((p) => p.count >= 100);
   console.log(
-    `\n    ${out.length} resolved, ${failed.length} unavailable; ${positive} positive (${((positive / out.length) * 100).toFixed(1)}%)`
+    `\n    ${rows.length} tickers, ${failed.length} unavailable; ${usable.length} years with 100+ companies; ${pooled.length} company-years pooled`
   );
 
   await write("constituents-year.json", {
-    name: `S&P 500 constituent total returns, calendar ${year}`,
-    source: "Yahoo Finance chart API; constituent list from the Datahub S&P 500 companies dataset",
+    name: `S&P 500 constituent annual total returns, ${firstYear}–${lastYear}`,
+    source:
+      "Yahoo Finance chart API; constituent list from the Datahub S&P 500 companies dataset",
     sourceUrl: "https://github.com/datasets/s-and-p-500-companies",
     retrieved: RETRIEVED,
-    year,
-    units: "decimal fraction (0.1 = +10%)",
+    firstYear,
+    lastYear,
+    years,
+    units: "decimal fraction (0.1 = +10%); null where the company was not trading",
     assumptions: [
       "Adjusted closes, so dividends and splits are included",
-      "Membership is the CURRENT index, applied retrospectively — this is a survivorship bias, and it makes the results look BETTER than the true historical cross-section because companies removed from the index are missing",
-      "Return measured from the last monthly close of the prior December to the last monthly close of the year",
-      `${failed.length} symbols could not be resolved and are excluded`,
+      "Membership is the CURRENT index applied retrospectively. This is a survivorship bias and it gets WORSE the further back you look: a 1995 column contains only companies that are still in the index in 2026, so it systematically excludes everything that failed, was acquired or was demoted. Early years flatter the market substantially",
+      "Coverage falls off going back — check `count` for each year before trusting it. Years with fewer than 100 companies are excluded from the year picker",
+      "Returns are Dec-to-Dec on monthly closes, so they differ slightly from exact calendar-year figures",
+      `${failed.length} symbols could not be resolved and are excluded entirely`,
     ],
     derived: {
-      count: out.length,
-      positive,
-      positiveShare: out.length ? positive / out.length : null,
-      medianReturn: median,
-      meanReturn: Number(mean.toFixed(4)),
+      tickers: rows.length,
+      perYear,
+      pooled: {
+        observations: pooled.length,
+        positive: pooledPositive,
+        positiveShare: Number((pooledPositive / pooled.length).toFixed(4)),
+        meanReturn: Number((pooled.reduce((s, v) => s + v, 0) / pooled.length).toFixed(4)),
+        medianReturn: Number(pooledSorted[Math.floor(pooledSorted.length / 2)].toFixed(4)),
+      },
       unresolved: failed,
     },
-    data: out,
+    data: rows,
   });
 }
 
@@ -446,14 +486,15 @@ async function buildCasino() {
 
 // ===================================================================
 async function main() {
-  const year = Number(process.argv[2] ?? 2025);
+  const firstYear = Number(process.argv[2] ?? 1990);
+  const lastYear = Number(process.argv[3] ?? new Date().getUTCFullYear() - 1);
   console.log(`\nPositive Sum — data preparation (${RETRIEVED})\n`);
   await buildAnnual();
   await buildDaily();
   await buildShiller();
   await buildDrawdowns();
   await buildCasino();
-  await buildConstituents(year);
+  await buildConstituents(firstYear, lastYear);
   console.log("\nDone. All datasets written to /data with provenance headers.\n");
 }
 

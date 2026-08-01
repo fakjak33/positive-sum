@@ -291,22 +291,58 @@ describe("missing the best days", () => {
   });
 });
 
-describe("constituent dataset", () => {
-  const c = load("constituents-year.json");
+type ConstituentRow = { returns: (number | null)[] };
 
+const constituentFile = load("constituents-year.json");
+const pooledReturns: number[] = constituentFile.data.flatMap(
+  (r: ConstituentRow) => r.returns.filter((v): v is number => v !== null)
+);
+
+describe("constituent dataset", () => {
   it("has close to 500 real companies", () => {
-    expect(c.data.length).toBeGreaterThan(450);
+    expect(constituentFile.data.length).toBeGreaterThan(450);
+  });
+
+  it("spans at least 30 years", () => {
+    // The interactives must never rest on a single flattering year.
+    const usable = constituentFile.derived.perYear.filter(
+      (p: { count: number }) => p.count >= 100
+    );
+    expect(usable.length).toBeGreaterThanOrEqual(30);
+  });
+
+  it("pools thousands of company-years", () => {
+    expect(pooledReturns.length).toBeGreaterThan(10_000);
   });
 
   it("declares its survivorship bias explicitly", () => {
-    expect(c.assumptions.join(" ")).toMatch(/survivorship/i);
+    expect(constituentFile.assumptions.join(" ")).toMatch(/survivorship/i);
+  });
+
+  it("warns that the bias worsens further back", () => {
+    expect(constituentFile.assumptions.join(" ")).toMatch(/worse|WORSE/);
   });
 
   it("shows the cross-section is skewed — mean above median", () => {
-    const rs = c.data.map((d: { return: number }) => d.return);
-    const mean = rs.reduce((a: number, b: number) => a + b, 0) / rs.length;
-    const median = percentile(rs, 0.5);
-    expect(mean).toBeGreaterThan(median);
+    const mean = pooledReturns.reduce((a, b) => a + b, 0) / pooledReturns.length;
+    expect(mean).toBeGreaterThan(percentile(pooledReturns, 0.5));
+  });
+
+  it("captures both a disastrous and a spectacular year", () => {
+    // If the year range ever silently narrows, this catches it: the point of
+    // the multi-year data is that the share of winners swings enormously.
+    const shares = constituentFile.derived.perYear
+      .filter((p: { count: number }) => p.count >= 100)
+      .map((p: { positiveShare: number }) => p.positiveShare);
+    expect(Math.min(...shares)).toBeLessThan(0.2);
+    expect(Math.max(...shares)).toBeGreaterThan(0.9);
+  });
+
+  it("pools to a mean well above the index — the survivorship tell", () => {
+    // Roughly double the index's real long-run return. This is not a finding,
+    // it is the bias, and the app says so on the page.
+    const mean = pooledReturns.reduce((a, b) => a + b, 0) / pooledReturns.length;
+    expect(mean).toBeGreaterThan(0.15);
   });
 });
 
@@ -314,9 +350,7 @@ describe("constituent dataset", () => {
 // Portfolio simulation
 // =====================================================================
 describe("portfolio simulation", () => {
-  const stockReturns: number[] = load("constituents-year.json").data.map(
-    (d: { return: number }) => d.return
-  );
+  const stockReturns: number[] = pooledReturns;
 
   it("is reproducible for a given seed", () => {
     const a = simulatePortfolios(stockReturns, 5, 500, 42);

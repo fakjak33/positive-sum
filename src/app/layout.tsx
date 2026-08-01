@@ -1,29 +1,28 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Instrument_Serif, JetBrains_Mono } from "next/font/google";
+import { Martian_Mono, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { ServiceWorker } from "@/components/service-worker";
 import { SITE } from "@/lib/site";
 
-// Self-hosted via next/font — no third-party request at runtime, which
-// both preserves privacy and is a hard requirement for offline support.
-const inter = Inter({
+// Self-hosted via next/font — no third-party request at runtime, which both
+// preserves privacy and is a hard requirement for offline support.
+//
+// Two monospace faces rather than one: Martian Mono is a wide geometric
+// modernist face that looks superb at display sizes and in bold, but is
+// genuinely punishing to read in long paragraphs. JetBrains Mono carries the
+// body text, where legibility at small sizes matters more than character.
+const display = Martian_Mono({
   subsets: ["latin"],
-  variable: "--font-inter",
-  display: "swap",
-});
-
-const display = Instrument_Serif({
-  subsets: ["latin"],
-  weight: "400",
+  weight: ["600", "700", "800"],
   variable: "--font-display",
   display: "swap",
 });
 
-const mono = JetBrains_Mono({
+const body = JetBrains_Mono({
   subsets: ["latin"],
-  variable: "--font-mono-num",
+  variable: "--font-body",
   display: "swap",
 });
 
@@ -70,8 +69,8 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: dark)", color: "#0b0d0f" },
-    { media: "(prefers-color-scheme: light)", color: "#faf9f7" },
+    { media: "(prefers-color-scheme: dark)", color: "#000000" },
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
   ],
   width: "device-width",
   initialScale: 1,
@@ -109,7 +108,7 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body
-        className={`${inter.variable} ${display.variable} ${mono.variable} min-h-dvh flex flex-col`}
+        className={`${body.variable} ${display.variable} min-h-dvh flex flex-col`}
       >
         <a
           href="#main"

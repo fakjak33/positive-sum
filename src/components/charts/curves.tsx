@@ -103,15 +103,23 @@ export function Curves({
           />
         )}
 
-        {series.map((s) => (
+        {series.map((s, i) => (
           <path
             key={s.label}
+            // `pathLength=1` normalises the dash maths so the draw-in animation
+            // takes the same time regardless of the real path length.
+            pathLength={s.dashed ? undefined : 1}
+            className={s.dashed ? undefined : "animate-draw"}
+            style={
+              s.dashed ? undefined : { animationDelay: `${i * 140}ms` }
+            }
             d={path(s.points as { x: number; y: number }[]) ?? undefined}
             fill="none"
             stroke={s.color}
-            strokeWidth={2}
+            strokeWidth={2.5}
             strokeDasharray={s.dashed ? "5 4" : undefined}
             strokeLinecap="round"
+            strokeLinejoin="round"
           />
         ))}
 

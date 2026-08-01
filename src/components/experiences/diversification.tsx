@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import {
   constituentReturns,
   constituentsMeta,
-  constituentsYear,
+  constituentYears,
   casinoMeta,
   AMERICAN_ROULETTE_EDGE,
 } from "@/lib/data";
@@ -57,7 +57,7 @@ export function Diversification() {
   return (
     <ExperienceFrame
       title="Build a portfolio, then run it 5,000 times"
-      intro={`Each run picks companies at random from the real ${constituentsYear} S&P 500 cross-section and weights them equally. Watch the spread of outcomes narrow as you add holdings — and watch where the centre stays.`}
+      intro={`Each run picks companies at random from the real S&P 500 cross-section (${constituentYears[0]}–${constituentYears[constituentYears.length - 1]}, every company-year pooled) and weights them equally. Watch the spread of outcomes narrow as you add holdings — and watch where the centre stays.`}
       datasets={[constituentsMeta, casinoMeta]}
       seed={seed}
       onReseed={() => setSeed((s) => s + 1)}
@@ -108,7 +108,7 @@ export function Diversification() {
       </div>
 
       <DataTable
-        caption={`Simulated portfolio outcomes by number of holdings, ${DRAWS} runs each, drawn from real ${constituentsYear} returns.`}
+        caption={`Simulated portfolio outcomes by number of holdings, ${DRAWS} runs each, drawn from real company-year returns ${constituentYears[0]}–${constituentYears[constituentYears.length - 1]}.`}
         columns={["Holdings", "5th pct", "Median", "95th pct", "Spread", "Lost money"]}
         rows={allSizes.map((r) => [
           r.n === 500 ? "All 500" : r.n,

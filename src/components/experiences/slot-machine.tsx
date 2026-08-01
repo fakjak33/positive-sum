@@ -1,7 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { constituents, constituentsMeta, constituentsYear } from "@/lib/data";
+import {
+  pooledConstituents,
+  constituentsMeta,
+  constituentYears,
+} from "@/lib/data";
 import { mulberry32, randInt } from "@/lib/sim/random";
 import { ExperienceFrame } from "@/components/ui/experience-frame";
 import { DataTable } from "@/components/ui/data-table";
@@ -35,7 +39,10 @@ export function SlotMachine() {
   const reduced = useReducedMotion();
   const [seed, setSeed] = useState(9001);
   const [spins, setSpins] = useState(0);
-  const [reels, setReels] = useState<(typeof constituents)[number][]>([]);
+  // Every company-year pooled, so a spin can land on any company in any year
+  // rather than replaying one flattering year over and over.
+  const universe = useMemo(() => pooledConstituents(), []);
+  const [reels, setReels] = useState<typeof universe>([]);
   const [jackpot, setJackpot] = useState<(typeof MEGA_WINNERS)[number] | null>(
     null
   );
@@ -49,9 +56,9 @@ export function SlotMachine() {
 
   function spin() {
     const next = [
-      constituents[randInt(rng, constituents.length)],
-      constituents[randInt(rng, constituents.length)],
-      constituents[randInt(rng, constituents.length)],
+      universe[randInt(rng, universe.length)],
+      universe[randInt(rng, universe.length)],
+      universe[randInt(rng, universe.length)],
     ];
     const hit = rng() < JACKPOT_ODDS;
 
@@ -76,7 +83,7 @@ export function SlotMachine() {
   return (
     <ExperienceFrame
       title="Pull the handle"
-      intro={`Each reel is a real S&P 500 company and its actual ${constituentsYear} return. Roughly one spin in twenty-five lands on one of the rare long-run compounders that Bessembinder found account for all of the market's net wealth creation.`}
+      intro={`Each reel is a real S&P 500 company and its actual return in a real year, drawn from ${constituentYears[0]}–${constituentYears[constituentYears.length - 1]}. Roughly one spin in twenty-five lands on one of the rare long-run compounders that Bessembinder found account for all of the market's net wealth creation.`}
       datasets={[constituentsMeta]}
       seed={seed}
       onReseed={() => {

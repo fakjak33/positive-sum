@@ -65,8 +65,12 @@ export function DistributionChart({
             y={by}
             width={bw}
             height={Math.max(0, bh)}
-            className={below ? "fill-loss" : "fill-gain"}
-            opacity={0.75}
+            className={`animate-rise ${below ? "fill-loss" : "fill-gain"}`}
+            style={{
+              transformOrigin: `${bx}px ${height - pad.bottom}px`,
+              animationDelay: `${Math.min(i, 44) * 12}ms`,
+            }}
+            opacity={0.85}
           />
         );
       })}

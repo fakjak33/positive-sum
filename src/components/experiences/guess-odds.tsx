@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { ExperienceFrame } from "@/components/ui/experience-frame";
-import { annualDerived, constituentsDerived, constituentsYear } from "@/lib/data";
+import { annualDerived, pooledStats, constituentYears } from "@/lib/data";
 
 type Question = {
   id: string;
@@ -46,13 +46,12 @@ const QUESTIONS: Question[] = [
   },
   {
     id: "constituents-positive",
-    prompt: `What share of S&P 500 companies finished ${constituentsYear} positive?`,
-    answer:
-      Math.round((constituentsDerived.positiveShare ?? 0.65) * 1000) / 10,
+    prompt: `Across every year from ${constituentYears[0]} to ${constituentYears[constituentYears.length - 1]}, what share of S&P 500 company-years finished positive?`,
+    answer: Math.round(pooledStats.positiveShare * 1000) / 10,
     unit: "%",
     explain:
-      "This moves a great deal year to year. The current-membership list is also survivorship-biased, which flatters it.",
-    source: `Computed from real ${constituentsYear} constituent returns`,
+      "Higher than most people guess — but it swings violently: 7% in 2008, 95% in 2003. The current-membership list is also survivorship-biased, which flatters this figure considerably.",
+    source: `Computed from ${pooledStats.observations.toLocaleString()} real company-years`,
   },
   {
     id: "roulette",

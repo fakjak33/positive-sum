@@ -32,13 +32,15 @@ const H = 630;
 const PAD = 72;
 const INNER = W - PAD * 2;
 
-const BG = "#0b0d0f";
-const TEXT = "#f2f0eb";
-const MUTED = "#9ba4ae";
-const SUBTLE = "#7d8691";
-const GAIN = "#10b981";
+const BG = "#000000";
+const TEXT = "#ffffff";
+const MUTED = "#a8a8a8";
+const SUBTLE = "#7d7d7d";
+const GAIN = "#00e58c";
 
-const FONT = "Segoe UI, Inter, Helvetica, Arial, sans-serif";
+// Monospace to match the site. Consolas ships on Windows, where these are
+// rasterised; the fallbacks cover other machines.
+const FONT = "Consolas, JetBrains Mono, DejaVu Sans Mono, monospace";
 
 /** SVG has no text layout engine, so wrap greedily using an average glyph width. */
 function wrap(text, fontSize, maxWidth, maxLines = 3) {

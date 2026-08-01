@@ -16,10 +16,10 @@ import sharp from "sharp";
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const OUT = join(ROOT, "public", "icons");
 
-const BG = "#0b0d0f";
-const MUTED = "#262d35";
-const GAIN = "#10b981";
-const RARE = "#d4a24c";
+const BG = "#000000";
+const MUTED = "#272727";
+const GAIN = "#00e58c";
+const RARE = "#ffc64d";
 
 /** Which cells light up. Deterministic, so the icon never changes between runs. */
 const LIT = new Set([2, 5, 7, 10, 12, 15, 19, 21]);

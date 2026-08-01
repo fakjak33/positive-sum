@@ -2,78 +2,81 @@
 
 /* ============================================================
    Positive Sum — design tokens
-   See docs/04-design-system.md for the rationale behind each
-   decision. The short version: casino *mechanics*, never casino
-   *aesthetics*. Colour carries meaning; gold is reserved for
-   statistically rare events only.
+
+   Pure black, pure white, everything monospace, everything bold.
+   Casino *mechanics*, never casino *aesthetics* — the reference
+   points are Swiss modernism and terminal typography, not a
+   gaming floor.
+
+   Colour still carries meaning: gold appears only for genuinely
+   rare events, and gain/loss is always paired with a shape or a
+   label so it never depends on hue alone.
    ============================================================ */
 
 :root {
   color-scheme: dark;
 
-  /* Neutrals — dark is the designed-for case */
-  --bg: #0b0d0f;
-  --surface: #12161a;
-  --surface-raised: #1a1f25;
-  --border: #262d35;
-  --border-strong: #39424d;
+  --bg: #000000;
+  --surface: #0a0a0a;
+  --surface-raised: #161616;
+  --border: #272727;
+  --border-strong: #454545;
 
-  --text: #f2f0eb; /* off-white, never pure #fff — pure white vibrates on near-black */
-  --text-muted: #9ba4ae;
-  --text-subtle: #7d8691; /* 4.6:1 on --bg, the tightest pair in the system */
+  --text: #ffffff;
+  --text-muted: #a8a8a8;
+  --text-subtle: #7d7d7d; /* 4.8:1 on pure black — the tightest pair here */
 
-  /* Semantics — each of these encodes meaning, not decoration */
-  --gain: #10b981;
-  --gain-dim: #065f46;
-  --loss: #e5484d; /* vermilion, deliberately not casino red */
-  --loss-dim: #7f1d1d;
-  --rare: #d4a24c; /* gold — ONLY for genuine tail events */
-  --market: #4d86d9; /* the index / aggregate */
-  --house: #8b5cf6; /* casino-side series */
+  /* Semantics, brightened for pure black so they stay vivid rather than muddy */
+  --gain: #00e58c;
+  --gain-dim: #063f2b;
+  --loss: #ff4d57;
+  --loss-dim: #4a1216;
+  --rare: #ffc64d; /* ONLY for statistically rare events */
+  --market: #5b9dff;
+  --house: #a78bfa;
 
-  --focus: #4d86d9;
+  --focus: #5b9dff;
 
   /* Type scale — 1.25 ratio */
-  --step--1: 0.8rem;
-  --step-0: 1rem;
-  --step-1: 1.25rem;
-  --step-2: 1.5625rem;
-  --step-3: 1.9531rem;
-  --step-4: 2.4414rem;
-  --step-5: 3.0518rem;
-  --step-6: 3.8147rem;
+  --step--1: 0.78rem;
+  --step-0: 0.95rem;
+  --step-1: 1.1875rem;
+  --step-2: 1.4844rem;
+  --step-3: 1.8555rem;
+  --step-4: 2.3193rem;
+  --step-5: 2.8992rem;
+  --step-6: 3.624rem;
 
-  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.3);
-  --shadow-md: 0 1px 2px rgb(0 0 0 / 0.3), 0 8px 24px rgb(0 0 0 / 0.2);
-  --shadow-lg: 0 2px 4px rgb(0 0 0 / 0.4), 0 16px 48px rgb(0 0 0 / 0.3);
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.6);
+  --shadow-md: 0 2px 8px rgb(0 0 0 / 0.7), 0 12px 32px rgb(0 0 0 / 0.5);
+  --shadow-glow: 0 0 0 1px var(--border-strong);
 }
 
-/* Light mode is supported and tested, not an afterthought. Semantics
-   darken so contrast holds against a light field. */
+/* Light mode inverts to pure white and darkens the semantics so contrast
+   holds. Supported and tested, but dark is the designed-for case. */
 :root[data-theme="light"] {
   color-scheme: light;
 
-  --bg: #faf9f7;
-  --surface: #ffffff;
+  --bg: #ffffff;
+  --surface: #f6f6f6;
   --surface-raised: #ffffff;
-  --border: #e2e0dc;
-  --border-strong: #c8c5bf;
+  --border: #dcdcdc;
+  --border-strong: #b4b4b4;
 
-  --text: #16191d;
-  --text-muted: #4e555d;
-  --text-subtle: #6b737c;
+  --text: #000000;
+  --text-muted: #4a4a4a;
+  --text-subtle: #6b6b6b;
 
-  --gain: #047857;
-  --gain-dim: #a7f3d0;
-  --loss: #c6282d;
-  --loss-dim: #fecaca;
-  --rare: #9a6b1f;
-  --market: #1d4ed8;
+  --gain: #00794d;
+  --gain-dim: #b8f0d8;
+  --loss: #cc2630;
+  --loss-dim: #ffd4d6;
+  --rare: #8a6100;
+  --market: #1a4fd6;
   --house: #6d28d9;
 
-  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.06);
-  --shadow-md: 0 1px 2px rgb(0 0 0 / 0.06), 0 8px 24px rgb(0 0 0 / 0.08);
-  --shadow-lg: 0 2px 4px rgb(0 0 0 / 0.08), 0 16px 48px rgb(0 0 0 / 0.12);
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.08);
+  --shadow-md: 0 2px 8px rgb(0 0 0 / 0.08), 0 12px 32px rgb(0 0 0 / 0.1);
 }
 
 @theme inline {
@@ -95,12 +98,14 @@
   --color-market: var(--market);
   --color-house: var(--house);
 
-  --font-sans: var(--font-inter);
+  /* Everything is monospace. Display is the wide geometric face, body is the
+     narrower highly-legible one — long prose in a display mono is punishing. */
+  --font-sans: var(--font-body);
   --font-serif: var(--font-display);
-  --font-mono: var(--font-mono-num);
+  --font-mono: var(--font-body);
 
   --text-xs: var(--step--1);
-  --text-sm: 0.9rem;
+  --text-sm: 0.86rem;
   --text-base: var(--step-0);
   --text-lg: var(--step-1);
   --text-xl: var(--step-2);
@@ -119,37 +124,44 @@
 body {
   background: var(--bg);
   color: var(--text);
-  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-  font-feature-settings: "cv05" 1, "ss01" 1;
+  font-family: var(--font-body), ui-monospace, monospace;
+  font-weight: 500;
+  letter-spacing: -0.01em;
   -webkit-font-smoothing: antialiased;
-  text-rendering: optimizeLegibility;
 }
 
-/* All figures render in mono so columns align down a table. */
+/* Monospace prose needs more room to breathe than proportional text. */
+p,
+li {
+  line-height: 1.7;
+}
+
 .tabular {
-  font-family: var(--font-mono-num), ui-monospace, monospace;
+  font-family: var(--font-display), var(--font-body), ui-monospace, monospace;
   font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  letter-spacing: -0.04em;
 }
 
 .display {
-  font-family: var(--font-display), ui-serif, Georgia, serif;
-  letter-spacing: -0.02em;
-  line-height: 1.05;
+  font-family: var(--font-display), ui-monospace, monospace;
+  font-weight: 700;
+  letter-spacing: -0.045em;
+  line-height: 1.08;
 }
 
-/* Editorial measure. Long-form prose should never exceed this. */
+/* Monospace runs wide, so the comfortable measure is shorter than for
+   proportional text. */
 .measure {
-  max-width: 68ch;
+  max-width: 58ch;
 }
 
-/* Visible focus everywhere — never remove without a replacement. */
 :focus-visible {
   outline: 2px solid var(--focus);
-  outline-offset: 2px;
+  outline-offset: 3px;
   border-radius: 2px;
 }
 
-/* Screen-reader-only, but focusable variant for skip links. */
 .sr-only:not(:focus):not(:active) {
   position: absolute;
   width: 1px;
@@ -162,15 +174,18 @@ body {
   border: 0;
 }
 
-/* Hairline rules do more work than shadows in dark mode. */
 .hairline {
   border-top: 1px solid var(--border);
 }
 
+/* ============================================================
+   Motion
+   ============================================================ */
+
 @keyframes ps-fade-up {
   from {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translateY(10px);
   }
   to {
     opacity: 1;
@@ -178,14 +193,121 @@ body {
   }
 }
 
-.animate-fade-up {
-  animation: ps-fade-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+@keyframes ps-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  70% {
+    transform: scale(1.06);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
-/* Reduced motion is a first-class path, not a fallback: animations
-   resolve instantly to their end state so no information is lost.
-   See docs/04-design-system.md — "reduced motion must never mean
-   reduced information". */
+@keyframes ps-slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes ps-draw {
+  from {
+    stroke-dashoffset: var(--draw-length, 2000);
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes ps-rise {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
+@keyframes ps-pulse-ring {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--market) 55%, transparent);
+  }
+  70% {
+    box-shadow: 0 0 0 12px transparent;
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
+@keyframes ps-shimmer {
+  from {
+    background-position: -200% 0;
+  }
+  to {
+    background-position: 200% 0;
+  }
+}
+
+.animate-fade-up {
+  animation: ps-fade-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.animate-pop {
+  animation: ps-pop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+.animate-slide-in {
+  animation: ps-slide-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.animate-rise {
+  transform-origin: bottom;
+  animation: ps-rise 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.animate-pulse-ring {
+  animation: ps-pulse-ring 1.6s ease-out infinite;
+}
+
+/* Chart lines draw themselves in. `pathLength="1"` on the <path> normalises
+   the dash maths so this works regardless of the real path length. */
+.animate-draw {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: ps-draw 1.1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  --draw-length: 1;
+}
+
+/* Staggered children — set --i on each child. */
+.stagger > * {
+  animation: ps-fade-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: calc(var(--i, 0) * 60ms);
+}
+
+/* Interactive surfaces lift slightly. Cheap, and makes the whole thing feel
+   responsive rather than static. */
+.lift {
+  transition:
+    transform 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 0.18s ease,
+    background-color 0.18s ease;
+}
+.lift:hover {
+  transform: translateY(-2px);
+}
+.lift:active {
+  transform: translateY(0);
+}
+
+/* Reduced motion is a first-class path, not a fallback: every animation
+   resolves instantly to its end state, so no information is ever withheld.
+   Note the explicit end-state resets — without them, an element that
+   animates *from* opacity 0 would be stranded invisible. */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -195,9 +317,39 @@ body {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+
+  .animate-fade-up,
+  .animate-pop,
+  .animate-slide-in,
+  .animate-rise,
+  .stagger > * {
+    opacity: 1 !important;
+    transform: none !important;
+    animation-delay: 0ms !important;
+  }
+
+  .animate-draw {
+    stroke-dasharray: none;
+    stroke-dashoffset: 0;
+  }
+
+  .lift:hover {
+    transform: none;
+  }
 }
 
 ::selection {
   background: var(--market);
-  color: #fff;
+  color: #000;
+}
+
+/* Native controls should match the palette rather than the OS default. */
+input[type="range"] {
+  accent-color: var(--market);
+}
+select,
+input,
+button {
+  font-family: inherit;
+  font-weight: 600;
 }
