@@ -1,0 +1,77 @@
+{
+  "name": "Casino game house edge and volatility",
+  "source": "Wizard of Odds house edge tables; state lottery figure from Matheson & Grote (2004)",
+  "sourceUrl": "https://wizardofodds.com/gambling/house-edge/",
+  "lotterySourceUrl": "https://web.williams.edu/Economics/wp/mathesonlottery.pdf",
+  "retrieved": "2026-08-01",
+  "units": "houseEdge as decimal fraction of the initial wager; stdDev per unit bet",
+  "assumptions": [
+    "House edge is expected loss as a share of the initial wager",
+    "Blackjack assumes perfect basic strategy under specific table rules",
+    "Slot and keno figures are mid-range illustrations of a wide published range"
+  ],
+  "data": [
+    {
+      "game": "Craps — free odds",
+      "houseEdge": 0,
+      "stdDev": 1,
+      "note": "The only bet in a casino with zero expected loss; it must be backed by a pass line bet that does carry an edge."
+    },
+    {
+      "game": "Blackjack — basic strategy",
+      "houseEdge": 0.0028,
+      "stdDev": 1.15,
+      "note": "Liberal Vegas rules with perfect basic strategy. Typical real play is several times worse."
+    },
+    {
+      "game": "Baccarat — banker",
+      "houseEdge": 0.0106,
+      "stdDev": 0.93
+    },
+    {
+      "game": "Craps — pass line",
+      "houseEdge": 0.0141,
+      "stdDev": 1
+    },
+    {
+      "game": "Baccarat — player",
+      "houseEdge": 0.0124,
+      "stdDev": 1
+    },
+    {
+      "game": "European roulette",
+      "houseEdge": 0.027,
+      "stdDev": 0.99,
+      "note": "Single zero."
+    },
+    {
+      "game": "American roulette",
+      "houseEdge": 0.0526,
+      "stdDev": 0.99,
+      "note": "Double zero. The extra pocket nearly doubles the edge."
+    },
+    {
+      "game": "Slot machines",
+      "houseEdge": 0.08,
+      "stdDev": 8,
+      "note": "Ranges from about 2% to 15% depending on machine and jurisdiction; 8% is a mid-range illustration."
+    },
+    {
+      "game": "Baccarat — tie",
+      "houseEdge": 0.1436,
+      "stdDev": 2.64
+    },
+    {
+      "game": "Keno",
+      "houseEdge": 0.27,
+      "stdDev": 10,
+      "note": "Ranges 25–29%."
+    },
+    {
+      "game": "State lottery",
+      "houseEdge": 0.45,
+      "stdDev": 100,
+      "note": "Prizes are typically 50–60% of ticket revenue. Sourced separately from Matheson & Grote, not from the Wizard of Odds table."
+    }
+  ]
+}

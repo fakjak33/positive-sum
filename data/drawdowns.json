@@ -1,0 +1,113 @@
+{
+  "name": "S&P 500 real drawdowns of 20% or more",
+  "source": "Computed from data/sp500-monthly.json (Shiller)",
+  "sourceUrl": "http://www.econ.yale.edu/~shiller/data.htm",
+  "retrieved": "2026-08-01",
+  "dataEnds": "2023-09-01",
+  "assumptions": [
+    "REAL (inflation-adjusted) price index — recovering in nominal terms is not recovering in purchasing power, and the nominal figures commonly quoted are therefore optimistic",
+    "Price only, excluding dividends — including dividends would shorten every recovery substantially",
+    "Monthly resolution, so short sharp declines such as 1987 and 2020 are understated or missed entirely",
+    "A drawdown is counted from a running peak to the first month that exceeds it",
+    "The CPI series in this dataset ends 2023-09-01. Any episode marked openAtEndOfData is censored by that cutoff, NOT a market that failed to recover — the 2021 episode in particular had recovered in nominal terms well before this dataset ends"
+  ],
+  "data": [
+    {
+      "peakDate": "1929-09-01",
+      "troughDate": "1932-06-01",
+      "recoveryDate": "1958-11-01",
+      "depth": -0.8061,
+      "monthsToTrough": 33,
+      "monthsToRecover": 350
+    },
+    {
+      "peakDate": "1906-09-01",
+      "troughDate": "1920-12-01",
+      "recoveryDate": "1928-09-01",
+      "depth": -0.7004,
+      "monthsToTrough": 171,
+      "monthsToRecover": 264
+    },
+    {
+      "peakDate": "1968-12-01",
+      "troughDate": "1982-07-01",
+      "recoveryDate": "1992-01-01",
+      "depth": -0.626,
+      "monthsToTrough": 163,
+      "monthsToRecover": 277
+    },
+    {
+      "peakDate": "2000-08-01",
+      "troughDate": "2009-03-01",
+      "recoveryDate": "2014-11-01",
+      "depth": -0.5859,
+      "monthsToTrough": 103,
+      "monthsToRecover": 171
+    },
+    {
+      "peakDate": "1876-02-01",
+      "troughDate": "1877-06-01",
+      "recoveryDate": "1878-12-01",
+      "depth": -0.3505,
+      "monthsToTrough": 16,
+      "monthsToRecover": 34
+    },
+    {
+      "peakDate": "1901-06-01",
+      "troughDate": "1903-10-01",
+      "recoveryDate": "1905-10-01",
+      "depth": -0.323,
+      "monthsToTrough": 28,
+      "monthsToRecover": 52
+    },
+    {
+      "peakDate": "1881-06-01",
+      "troughDate": "1884-06-01",
+      "recoveryDate": "1886-06-01",
+      "depth": -0.2716,
+      "monthsToTrough": 36,
+      "monthsToRecover": 60
+    },
+    {
+      "peakDate": "1892-05-01",
+      "troughDate": "1893-07-01",
+      "recoveryDate": "1898-08-01",
+      "depth": -0.2693,
+      "monthsToTrough": 14,
+      "monthsToRecover": 75
+    },
+    {
+      "peakDate": "2021-11-01",
+      "troughDate": "2022-10-01",
+      "recoveryDate": null,
+      "depth": -0.2554,
+      "monthsToTrough": 11,
+      "monthsToRecover": null,
+      "openAtEndOfData": true
+    },
+    {
+      "peakDate": "1961-12-01",
+      "troughDate": "1962-06-01",
+      "recoveryDate": "1963-12-01",
+      "depth": -0.2297,
+      "monthsToTrough": 6,
+      "monthsToRecover": 24
+    },
+    {
+      "peakDate": "1886-11-01",
+      "troughDate": "1890-12-01",
+      "recoveryDate": "1892-01-01",
+      "depth": -0.2246,
+      "monthsToTrough": 49,
+      "monthsToRecover": 62
+    },
+    {
+      "peakDate": "1966-01-01",
+      "troughDate": "1966-10-01",
+      "recoveryDate": "1968-10-01",
+      "depth": -0.2011,
+      "monthsToTrough": 9,
+      "monthsToRecover": 33
+    }
+  ]
+}

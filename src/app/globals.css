@@ -1,0 +1,203 @@
+@import "tailwindcss";
+
+/* ============================================================
+   Positive Sum — design tokens
+   See docs/04-design-system.md for the rationale behind each
+   decision. The short version: casino *mechanics*, never casino
+   *aesthetics*. Colour carries meaning; gold is reserved for
+   statistically rare events only.
+   ============================================================ */
+
+:root {
+  color-scheme: dark;
+
+  /* Neutrals — dark is the designed-for case */
+  --bg: #0b0d0f;
+  --surface: #12161a;
+  --surface-raised: #1a1f25;
+  --border: #262d35;
+  --border-strong: #39424d;
+
+  --text: #f2f0eb; /* off-white, never pure #fff — pure white vibrates on near-black */
+  --text-muted: #9ba4ae;
+  --text-subtle: #7d8691; /* 4.6:1 on --bg, the tightest pair in the system */
+
+  /* Semantics — each of these encodes meaning, not decoration */
+  --gain: #10b981;
+  --gain-dim: #065f46;
+  --loss: #e5484d; /* vermilion, deliberately not casino red */
+  --loss-dim: #7f1d1d;
+  --rare: #d4a24c; /* gold — ONLY for genuine tail events */
+  --market: #4d86d9; /* the index / aggregate */
+  --house: #8b5cf6; /* casino-side series */
+
+  --focus: #4d86d9;
+
+  /* Type scale — 1.25 ratio */
+  --step--1: 0.8rem;
+  --step-0: 1rem;
+  --step-1: 1.25rem;
+  --step-2: 1.5625rem;
+  --step-3: 1.9531rem;
+  --step-4: 2.4414rem;
+  --step-5: 3.0518rem;
+  --step-6: 3.8147rem;
+
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.3);
+  --shadow-md: 0 1px 2px rgb(0 0 0 / 0.3), 0 8px 24px rgb(0 0 0 / 0.2);
+  --shadow-lg: 0 2px 4px rgb(0 0 0 / 0.4), 0 16px 48px rgb(0 0 0 / 0.3);
+}
+
+/* Light mode is supported and tested, not an afterthought. Semantics
+   darken so contrast holds against a light field. */
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  --bg: #faf9f7;
+  --surface: #ffffff;
+  --surface-raised: #ffffff;
+  --border: #e2e0dc;
+  --border-strong: #c8c5bf;
+
+  --text: #16191d;
+  --text-muted: #4e555d;
+  --text-subtle: #6b737c;
+
+  --gain: #047857;
+  --gain-dim: #a7f3d0;
+  --loss: #c6282d;
+  --loss-dim: #fecaca;
+  --rare: #9a6b1f;
+  --market: #1d4ed8;
+  --house: #6d28d9;
+
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.06);
+  --shadow-md: 0 1px 2px rgb(0 0 0 / 0.06), 0 8px 24px rgb(0 0 0 / 0.08);
+  --shadow-lg: 0 2px 4px rgb(0 0 0 / 0.08), 0 16px 48px rgb(0 0 0 / 0.12);
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+
+  --color-text: var(--text);
+  --color-text-muted: var(--text-muted);
+  --color-text-subtle: var(--text-subtle);
+
+  --color-gain: var(--gain);
+  --color-gain-dim: var(--gain-dim);
+  --color-loss: var(--loss);
+  --color-loss-dim: var(--loss-dim);
+  --color-rare: var(--rare);
+  --color-market: var(--market);
+  --color-house: var(--house);
+
+  --font-sans: var(--font-inter);
+  --font-serif: var(--font-display);
+  --font-mono: var(--font-mono-num);
+
+  --text-xs: var(--step--1);
+  --text-sm: 0.9rem;
+  --text-base: var(--step-0);
+  --text-lg: var(--step-1);
+  --text-xl: var(--step-2);
+  --text-2xl: var(--step-3);
+  --text-3xl: var(--step-4);
+  --text-4xl: var(--step-5);
+  --text-5xl: var(--step-6);
+
+  --shadow-soft: var(--shadow-md);
+}
+
+* {
+  border-color: var(--border);
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  font-feature-settings: "cv05" 1, "ss01" 1;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* All figures render in mono so columns align down a table. */
+.tabular {
+  font-family: var(--font-mono-num), ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+.display {
+  font-family: var(--font-display), ui-serif, Georgia, serif;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+}
+
+/* Editorial measure. Long-form prose should never exceed this. */
+.measure {
+  max-width: 68ch;
+}
+
+/* Visible focus everywhere — never remove without a replacement. */
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* Screen-reader-only, but focusable variant for skip links. */
+.sr-only:not(:focus):not(:active) {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Hairline rules do more work than shadows in dark mode. */
+.hairline {
+  border-top: 1px solid var(--border);
+}
+
+@keyframes ps-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.animate-fade-up {
+  animation: ps-fade-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Reduced motion is a first-class path, not a fallback: animations
+   resolve instantly to their end state so no information is lost.
+   See docs/04-design-system.md — "reduced motion must never mean
+   reduced information". */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+::selection {
+  background: var(--market);
+  color: #fff;
+}
