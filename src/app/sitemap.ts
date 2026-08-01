@@ -2,6 +2,9 @@ import type { MetadataRoute } from "next";
 import { ANALOGIES } from "@/content/analogies";
 import { SITE } from "@/lib/site";
 
+// Required by `output: "export"` — see robots.ts.
+export const dynamic = "force-static";
+
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date();
 

@@ -1,6 +1,9 @@
 import type { MetadataRoute } from "next";
 import { SITE } from "@/lib/site";
 
+// Required by `output: "export"` — see robots.ts.
+export const dynamic = "force-static";
+
 export default function manifest(): MetadataRoute.Manifest {
   return {
     name: `${SITE.name} — ${SITE.tagline}`,
