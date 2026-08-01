@@ -1,0 +1,170 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { ANALOGIES, getAnalogy } from "@/content/analogies";
+import { CITATIONS } from "@/content/citations";
+import { CATEGORY_LABELS } from "@/content/types";
+import { ReframePanel } from "@/components/ui/reframe-panel";
+import { SourceCard } from "@/components/ui/source-card";
+import { Statistic } from "@/components/ui/statistic";
+import { Experience } from "@/components/experiences/registry";
+import { BookmarkButton } from "@/components/ui/bookmark-button";
+import { SITE } from "@/lib/site";
+
+type Params = { params: Promise<{ slug: string }> };
+
+export function generateStaticParams() {
+  return ANALOGIES.map((a) => ({ slug: a.slug }));
+}
+
+export async function generateMetadata({ params }: Params): Promise<Metadata> {
+  const { slug } = await params;
+  const a = getAnalogy(slug);
+  if (!a) return {};
+  return {
+    title: a.title,
+    description: a.marketStat,
+    alternates: { canonical: `/analogies/${a.slug}` },
+    openGraph: {
+      type: "article",
+      title: a.title,
+      description: a.marketStat,
+      url: `${SITE.url}/analogies/${a.slug}`,
+    },
+  };
+}
+
+export default async function AnalogyPage({ params }: Params) {
+  const { slug } = await params;
+  const a = getAnalogy(slug);
+  if (!a) notFound();
+
+  const cited = a.citations.map((id) => CITATIONS[id]);
+  const index = ANALOGIES.findIndex((x) => x.slug === a.slug);
+  const prev = ANALOGIES[index - 1];
+  const next = ANALOGIES[index + 1];
+
+  // Structured data pointing at the primary sources, so the citations are
+  // machine-readable and not just rendered text.
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: a.title,
+    description: a.marketStat,
+    isAccessibleForFree: true,
+    citation: cited.map((c) => ({
+      "@type": "CreativeWork",
+      name: c.title,
+      url: c.url,
+      publisher: c.publisher,
+      datePublished: c.publicationDate,
+    })),
+  };
+
+  return (
+    <article className="mx-auto max-w-4xl px-4 py-10 sm:px-6 sm:py-16">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+
+      <div className="flex items-center justify-between gap-4">
+        <Link
+          href="/analogies"
+          className="text-sm text-text-muted hover:text-text"
+        >
+          ‹ All analogies
+        </Link>
+        <BookmarkButton slug={a.slug} title={a.title} />
+      </div>
+
+      <header className="mt-8">
+        <p className="text-xs uppercase tracking-widest text-text-subtle">
+          {CATEGORY_LABELS[a.category]}
+        </p>
+        <h1 className="display mt-3 text-3xl sm:text-4xl">{a.title}</h1>
+
+        <div className="mt-8">
+          <Statistic
+            value={a.headline}
+            caption={a.headlineCaption}
+            tone="default"
+          />
+        </div>
+
+        <p className="measure mt-8 text-lg leading-relaxed text-text-muted">
+          {a.marketStat}
+        </p>
+      </header>
+
+      <section className="mt-10 rounded-lg border border-border bg-surface p-5">
+        <p className="text-xs uppercase tracking-widest text-text-subtle">
+          The casino comparison
+        </p>
+        <p className="measure mt-2 text-base leading-relaxed">
+          {a.casinoComparison}
+        </p>
+        <p className="measure mt-4 text-sm leading-relaxed text-text-muted">
+          {a.explanation}
+        </p>
+      </section>
+
+      {a.interactive && (
+        <section className="mt-10" aria-label="Interactive">
+          <Experience id={a.interactive} />
+        </section>
+      )}
+
+      <section className="mt-10" aria-label="What this analogy does and does not explain">
+        <ReframePanel
+          worksBecause={a.worksBecause}
+          breaksDownBecause={a.breaksDownBecause}
+        />
+      </section>
+
+      <section className="mt-10" aria-labelledby="sources-heading">
+        <h2
+          id="sources-heading"
+          className="text-xs uppercase tracking-widest text-text-subtle"
+        >
+          Sources
+        </h2>
+        <ul className="mt-4 space-y-3">
+          {cited.map((c) => (
+            <SourceCard key={c.id} citation={c} />
+          ))}
+        </ul>
+      </section>
+
+      <nav
+        className="mt-12 flex flex-col gap-3 border-t border-border pt-6 sm:flex-row sm:justify-between"
+        aria-label="Analogy navigation"
+      >
+        {prev ? (
+          <Link
+            href={`/analogies/${prev.slug}`}
+            className="group text-sm text-text-muted hover:text-text"
+          >
+            <span className="block text-xs uppercase tracking-widest text-text-subtle">
+              Previous
+            </span>
+            ‹ {prev.title}
+          </Link>
+        ) : (
+          <span />
+        )}
+        {next && (
+          <Link
+            href={`/analogies/${next.slug}`}
+            className="group text-sm text-text-muted hover:text-text sm:text-right"
+          >
+            <span className="block text-xs uppercase tracking-widest text-text-subtle">
+              Next
+            </span>
+            {next.title} ›
+          </Link>
+        )}
+      </nav>
+    </article>
+  );
+}
