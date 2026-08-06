@@ -8,12 +8,15 @@ import {
   constituentYears,
   statsForYear,
   pooledStats,
+  coverageStats,
+  constituentsDerived,
 } from "@/lib/data";
 import { mulberry32, randInt } from "@/lib/sim/random";
 import { ExperienceFrame } from "@/components/ui/experience-frame";
 import { PredictionGate } from "@/components/ui/prediction-gate";
 import { DataTable } from "@/components/ui/data-table";
 import { YearPicker, type YearSelection } from "@/components/ui/year-picker";
+import { RouletteWheel } from "./roulette-wheel";
 import { useReducedMotion } from "@/lib/use-reduced-motion";
 
 const pct = (n: number) => `${(n * 100).toFixed(1)}%`;
@@ -39,6 +42,7 @@ export function Roulette() {
   const [picked, setPicked] = useState<number | null>(null);
   const [revealed, setRevealed] = useState(false);
   const [guess, setGuess] = useState<number | null>(null);
+  const [mode, setMode] = useState<"grid" | "wheel">("grid");
 
   const universe = useMemo(
     () => (year === null ? pooledConstituents() : constituentsForYear(year)),
@@ -133,6 +137,39 @@ export function Roulette() {
         />
 
         <div
+          className="mt-5 flex gap-2"
+          role="group"
+          aria-label="Display mode"
+        >
+          {(["grid", "wheel"] as const).map((m) => (
+            <button
+              key={m}
+              type="button"
+              onClick={() => setMode(m)}
+              aria-pressed={mode === m}
+              className={`min-h-11 rounded-md border px-4 text-xs font-bold uppercase tracking-wider transition-all ${
+                mode === m
+                  ? "border-text bg-text text-bg"
+                  : "border-border text-text-muted hover:-translate-y-px hover:bg-surface-raised hover:text-text"
+              }`}
+            >
+              {m === "grid" ? "Whole field" : "Spin a wheel"}
+            </button>
+          ))}
+        </div>
+
+        {mode === "wheel" ? (
+          <div className="mt-6">
+            <RouletteWheel pockets={universe} seed={seed} />
+            <p className="measure mx-auto mt-5 text-center text-xs leading-relaxed text-text-subtle">
+              Twenty-four real companies, real returns, one pointer. It feels
+              exactly like a casino wheel — which is the point, and also where
+              the comparison starts to break: this wheel has no house pocket,
+              the payouts are unbounded above, and the odds change every year.
+            </p>
+          </div>
+        ) : (
+        <div
           className="mt-5 grid gap-[3px]"
           style={{ gridTemplateColumns: "repeat(auto-fill, minmax(14px, 1fr))" }}
           role="img"
@@ -148,21 +185,26 @@ export function Roulette() {
                 style={
                   reduced ? undefined : { animationDelay: `${Math.min(idx, 120) * 4}ms` }
                 }
+                // The selected square used to scale up with a ring, which
+                // overlapped its neighbours and looked broken. An INSET ring
+                // plus a brightness lift stays inside the cell, so nothing
+                // shifts and the grid never reflows.
                 className={[
                   "aspect-square rounded-[2px]",
-                  reduced ? "" : "animate-pop transition-all duration-300",
+                  reduced ? "" : "animate-pop transition-[opacity,box-shadow] duration-300",
                   isPick
-                    ? "scale-[1.6] ring-2 ring-text ring-offset-2 ring-offset-surface"
+                    ? "shadow-[inset_0_0_0_2px_var(--bg),0_0_0_2px_var(--text)] z-10"
                     : "",
-                  picked !== null && !isPick ? "opacity-20" : "",
+                  picked !== null && !isPick ? "opacity-15" : "",
                   up ? "bg-gain" : "bg-loss",
                 ].join(" ")}
               />
             );
           })}
         </div>
+        )}
 
-        {year === null && (
+        {mode === "grid" && year === null && (
           <p className="mt-3 text-xs text-text-subtle">
             Showing a seeded sample of {POOLED_SAMPLE} of{" "}
             {pooledStats.observations.toLocaleString()} company-years. The
@@ -170,24 +212,26 @@ export function Roulette() {
           </p>
         )}
 
-        <div className="mt-6 flex flex-wrap gap-3">
-          <button
-            type="button"
-            onClick={pickRandom}
-            className="min-h-11 rounded-md bg-text px-5 text-sm font-bold uppercase tracking-wider text-bg transition-all hover:-translate-y-px hover:opacity-90 active:translate-y-0"
-          >
-            {picked === null ? "Pick one at random" : "Pick another"}
-          </button>
-          {picked !== null && (
+        {mode === "grid" && (
+          <div className="mt-6 flex flex-wrap gap-3">
             <button
               type="button"
-              onClick={reset}
-              className="min-h-11 rounded-md border border-border px-5 text-sm font-bold uppercase tracking-wider text-text-muted transition-all hover:-translate-y-px hover:bg-surface-raised hover:text-text active:translate-y-0"
+              onClick={pickRandom}
+              className="min-h-11 rounded-md bg-text px-5 text-sm font-bold uppercase tracking-wider text-bg transition-all hover:-translate-y-px hover:opacity-90 active:translate-y-0"
             >
-              Show the whole field
+              {picked === null ? "Pick one at random" : "Pick another"}
             </button>
-          )}
-        </div>
+            {picked !== null && (
+              <button
+                type="button"
+                onClick={reset}
+                className="min-h-11 rounded-md border border-border px-5 text-sm font-bold uppercase tracking-wider text-text-muted transition-all hover:-translate-y-px hover:bg-surface-raised hover:text-text active:translate-y-0"
+              >
+                Show the whole field
+              </button>
+            )}
+          </div>
+        )}
 
         <div className="mt-6 grid gap-4 sm:grid-cols-2" aria-live="polite">
           <div className="rounded-lg border border-border bg-bg p-5">
@@ -262,12 +306,22 @@ export function Roulette() {
             −100%, and the upside has no ceiling.
           </p>
           <p className="measure mt-3 text-xs leading-relaxed text-text-subtle">
-            One caveat you should hold onto: pooled across every year these
-            companies averaged {pct(pooledStats.meanReturn)} a year, which is
-            roughly double the index&rsquo;s actual long-run return. That gap is
-            not a discovery — it is survivorship bias. Only companies still in
-            the index today appear here, so everything that failed or was
-            demoted is missing.
+            <span className="font-bold text-text-muted">On survivorship:</span>{" "}
+            membership here is point-in-time, so each year uses the companies
+            genuinely in the index that January — including{" "}
+            {constituentsDerived.tickers - 500}+ that have since failed, been
+            acquired or been demoted. A company dropped mid-year is measured to
+            its last traded price, so its collapse counts.
+          </p>
+          <p className="measure mt-2 text-xs leading-relaxed text-text-subtle">
+            What remains is measured rather than assumed: this sample covers{" "}
+            {(coverageStats.meanShareOfIndex * 100).toFixed(0)}% of real index
+            members and sits{" "}
+            {(coverageStats.meanResidualBias * 100).toFixed(1)}pp a year from
+            the true index return — some of which is equal- versus
+            cap-weighting rather than bias. Delisted companies whose price
+            history is gone cannot be recovered, and those skew to the worst
+            outcomes, so what is left still points slightly optimistic.
           </p>
         </div>
       </ExperienceFrame>

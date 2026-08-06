@@ -3,7 +3,7 @@
   "source": "Wizard of Odds house edge tables; state lottery figure from Matheson & Grote (2004)",
   "sourceUrl": "https://wizardofodds.com/gambling/house-edge/",
   "lotterySourceUrl": "https://web.williams.edu/Economics/wp/mathesonlottery.pdf",
-  "retrieved": "2026-08-01",
+  "retrieved": "2026-08-06",
   "units": "houseEdge as decimal fraction of the initial wager; stdDev per unit bet",
   "assumptions": [
     "House edge is expected loss as a share of the initial wager",

@@ -1,7 +1,12 @@
 "use client";
 
 import { useId } from "react";
-import { constituentYears, statsForYear, pooledStats } from "@/lib/data";
+import {
+  constituentYears,
+  statsForYear,
+  pooledStats,
+  GOOD_COVERAGE,
+} from "@/lib/data";
 
 /** `null` means "all years pooled". */
 export type YearSelection = number | null;
@@ -89,13 +94,15 @@ export function YearPicker({ value, onChange, onRandom }: Props) {
         ) : stat ? (
           <>
             <span className="font-bold text-text-muted">
-              {stat.count} companies
+              {stat.count} of the {stat.inIndex} companies
             </span>{" "}
-            traded in {value}.{" "}
-            {value < 2005 && (
+            actually in the index in {value} ({(stat.coverage * 100).toFixed(0)}%
+            covered).{" "}
+            {stat.coverage < GOOD_COVERAGE && (
               <span className="text-rare">
-                Coverage is thin this far back and heavily survivorship-biased —
-                only companies still in the index today appear.
+                Thin coverage — many companies from this era have no price
+                history left anywhere public, and those are disproportionately
+                the worst outcomes.
               </span>
             )}
           </>

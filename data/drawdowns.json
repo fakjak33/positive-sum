@@ -2,7 +2,7 @@
   "name": "S&P 500 real drawdowns of 20% or more",
   "source": "Computed from data/sp500-monthly.json (Shiller)",
   "sourceUrl": "http://www.econ.yale.edu/~shiller/data.htm",
-  "retrieved": "2026-08-01",
+  "retrieved": "2026-08-06",
   "dataEnds": "2023-09-01",
   "assumptions": [
     "REAL (inflation-adjusted) price index — recovering in nominal terms is not recovering in purchasing power, and the nominal figures commonly quoted are therefore optimistic",

@@ -79,12 +79,14 @@ export const viewport: Viewport = {
 
 // Runs before paint so a returning user never sees a flash of the wrong
 // theme. Kept deliberately tiny and dependency-free.
+// Night mode — black background, white text — is the DEFAULT, regardless of
+// what the operating system prefers. This site is designed for it, and only an
+// explicit choice by the reader switches to light.
 const themeScript = `
 (function(){
   try {
     var stored = localStorage.getItem('ps-theme');
-    var theme = stored || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
-    document.documentElement.setAttribute('data-theme', theme);
+    document.documentElement.setAttribute('data-theme', stored === 'light' ? 'light' : 'dark');
   } catch (e) {
     document.documentElement.setAttribute('data-theme', 'dark');
   }

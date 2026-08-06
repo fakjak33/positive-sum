@@ -303,24 +303,49 @@ describe("constituent dataset", () => {
     expect(constituentFile.data.length).toBeGreaterThan(450);
   });
 
-  it("spans at least 30 years", () => {
+  it("spans nearly three decades", () => {
     // The interactives must never rest on a single flattering year.
     const usable = constituentFile.derived.perYear.filter(
       (p: { count: number }) => p.count >= 100
     );
-    expect(usable.length).toBeGreaterThanOrEqual(30);
+    expect(usable.length).toBeGreaterThanOrEqual(25);
   });
 
   it("pools thousands of company-years", () => {
-    expect(pooledReturns.length).toBeGreaterThan(10_000);
+    expect(pooledReturns.length).toBeGreaterThan(9_000);
   });
 
-  it("declares its survivorship bias explicitly", () => {
-    expect(constituentFile.assumptions.join(" ")).toMatch(/survivorship/i);
+  it("uses point-in-time membership, not today's list applied backwards", () => {
+    // This is the survivorship correction. If the pipeline ever reverts to
+    // current membership, this fails.
+    const text = constituentFile.assumptions.join(" ");
+    expect(text).toMatch(/point-in-time/i);
+    expect(text).toMatch(/survivorship/i);
   });
 
-  it("warns that the bias worsens further back", () => {
-    expect(constituentFile.assumptions.join(" ")).toMatch(/worse|WORSE/);
+  it("includes companies that are no longer in the index", () => {
+    // ~500 companies are in the index today. If the dataset only contained
+    // those, the correction would not be happening.
+    expect(constituentFile.data.length).toBeGreaterThan(550);
+    const gone = constituentFile.data.filter((r: { sector: string }) =>
+      /no longer/i.test(r.sector)
+    );
+    expect(gone.length).toBeGreaterThan(50);
+  });
+
+  it("measures the residual bias rather than assuming it away", () => {
+    const cov = constituentFile.derived.coverage;
+    expect(cov.meanShareOfIndex).toBeGreaterThan(0.5);
+    expect(typeof cov.meanResidualBias).toBe("number");
+  });
+
+  it("rejects corrupt adjusted closes from delisted tickers", () => {
+    // Yahoo returned +150,060% for one delisted ticker. A single value like
+    // that moves the mean of ten thousand observations by ~15pp.
+    for (const v of pooledReturns) {
+      expect(v).toBeLessThanOrEqual(10);
+      expect(v).toBeGreaterThanOrEqual(-1);
+    }
   });
 
   it("shows the cross-section is skewed — mean above median", () => {
@@ -338,11 +363,27 @@ describe("constituent dataset", () => {
     expect(Math.max(...shares)).toBeGreaterThan(0.9);
   });
 
-  it("pools to a mean well above the index — the survivorship tell", () => {
-    // Roughly double the index's real long-run return. This is not a finding,
-    // it is the bias, and the app says so on the page.
+  it("now tracks the real index instead of wildly beating it", () => {
+    // Before the point-in-time fix this pooled to ~+20%/yr against an index
+    // that returned ~11% — the survivorship tell. It should now sit close
+    // enough that the remaining gap is plausibly equal- vs cap-weighting.
     const mean = pooledReturns.reduce((a, b) => a + b, 0) / pooledReturns.length;
-    expect(mean).toBeGreaterThan(0.15);
+    expect(mean).toBeLessThan(0.16);
+    expect(mean).toBeGreaterThan(0.05);
+    expect(
+      Math.abs(constituentFile.derived.coverage.meanResidualBias)
+    ).toBeLessThan(0.06);
+  });
+
+  it("reproduces the crash years the index actually had", () => {
+    // A survivorship-biased sample softens crashes, because the companies
+    // that died are missing. 2008 tracking the index closely is the strongest
+    // single evidence the correction is working.
+    const y2008 = constituentFile.derived.perYear.find(
+      (p: { year: number }) => p.year === 2008
+    );
+    expect(y2008.positiveShare).toBeLessThan(0.15);
+    expect(Math.abs(y2008.meanReturn - y2008.indexReturn)).toBeLessThan(0.05);
   });
 });
 

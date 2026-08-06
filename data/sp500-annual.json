@@ -2,7 +2,7 @@
   "name": "S&P 500 annual total returns",
   "source": "NYU Stern School of Business — Aswath Damodaran historical returns dataset",
   "sourceUrl": "https://pages.stern.nyu.edu/~adamodar/New_Home_Page/datafile/histretSP.html",
-  "retrieved": "2026-08-01",
+  "retrieved": "2026-08-06",
   "units": "decimal fraction (0.1 = +10%)",
   "assumptions": [
     "Nominal, not inflation-adjusted",

@@ -205,28 +205,25 @@ async function buildShiller() {
 }
 
 // ===================================================================
-// 4. S&P 500 constituent calendar-year returns, MANY years
+// 4. S&P 500 constituent calendar-year returns, POINT-IN-TIME
 // ===================================================================
 // Powers the roulette, diversification and concentration interactives.
 //
-// A single year is a misleading sample — 2025 had an unusually high share of
-// winners, and building the whole argument on it would be exactly the
-// cherry-picking this site criticises. So we pull every year we can and let
-// the reader pick one, take a random one, or see all of them pooled.
+// The hard part here is survivorship bias, and it is worth being precise
+// about what causes it. Using TODAY's index membership and looking backwards
+// silently deletes every company that failed, was acquired, or was demoted —
+// which is most of the losers. It makes the market look far better than it was.
 //
-// One request per ticker covers the whole history (monthly interval), so this
-// costs no more calls than the single-year version did.
+// So membership comes from dated point-in-time snapshots instead: for each
+// year we use the companies that were ACTUALLY in the index that year,
+// including ones that no longer exist. A company that was dropped mid-year is
+// measured to its last traded price, so its collapse counts.
+//
+// Residual bias cannot be driven to zero — some delisted tickers have no
+// price history left anywhere public — so the script measures what remains by
+// comparing the sample against the real index return, and publishes that gap.
 async function buildConstituents(firstYear, lastYear) {
-  console.log(`Constituent annual returns, ${firstYear}–${lastYear}…`);
-
-  const csv = await getText(
-    "https://raw.githubusercontent.com/datasets/s-and-p-500-companies/main/data/constituents.csv"
-  );
-  const lines = csv.trim().split(/\r?\n/);
-  const head = lines[0].split(",");
-  const iSym = head.indexOf("Symbol");
-  const iName = head.indexOf("Security");
-  const iSector = head.indexOf("GICS Sector");
+  console.log(`Constituent annual returns (point-in-time), ${firstYear}–${lastYear}…`);
 
   // Handle quoted commas inside company names.
   const splitCsv = (line) =>
@@ -234,25 +231,98 @@ async function buildConstituents(firstYear, lastYear) {
       s.replace(/^"|"$/g, "")
     ) ?? [];
 
-  const members = lines.slice(1).map((l) => {
+  // --- Names and sectors, known only for CURRENT members ---
+  const nameCsv = await getText(
+    "https://raw.githubusercontent.com/datasets/s-and-p-500-companies/main/data/constituents.csv"
+  );
+  const nameLines = nameCsv.trim().split(/\r?\n/);
+  const nh = nameLines[0].split(",");
+  const meta = new Map();
+  for (const l of nameLines.slice(1)) {
     const c = splitCsv(l);
-    return { symbol: c[iSym], name: c[iName], sector: c[iSector] };
-  }).filter((m) => m.symbol);
+    const sym = c[nh.indexOf("Symbol")];
+    if (sym) {
+      meta.set(sym, {
+        name: c[nh.indexOf("Security")],
+        sector: c[nh.indexOf("GICS Sector")],
+      });
+    }
+  }
 
-  console.log(`    ${members.length} constituents listed`);
+  // --- Point-in-time membership snapshots ---
+  const histCsv = await getText(
+    "https://raw.githubusercontent.com/fja05680/sp500/master/S%26P%20500%20Historical%20Components%20%26%20Changes%20(Updated).csv"
+  );
+  const histLines = histCsv.trim().split(/\r?\n/).slice(1);
+
+  const snapshots = [];
+  for (const line of histLines) {
+    const m = line.match(/^(\d{4}-\d{2}-\d{2}),"?([^"]*)"?$/);
+    if (!m) continue;
+    snapshots.push({ date: m[1], tickers: m[2].split(",").filter(Boolean) });
+  }
+  snapshots.sort((a, b) => a.date.localeCompare(b.date));
+  console.log(
+    `    ${snapshots.length} membership snapshots, ${snapshots[0].date} → ${snapshots[snapshots.length - 1].date}`
+  );
 
   const years = [];
   for (let y = firstYear; y <= lastYear; y++) years.push(y);
+
+  // Membership for year Y = the last snapshot at or before 1 January of Y.
+  // Anyone in the index at the start of the year is measured for that year,
+  // including companies that were removed part-way through it.
+  const membersByYear = new Map();
+  for (const y of years) {
+    const cutoff = `${y}-01-01`;
+    let chosen = null;
+    for (const s of snapshots) {
+      if (s.date <= cutoff) chosen = s;
+      else break;
+    }
+    if (chosen) membersByYear.set(y, new Set(chosen.tickers));
+  }
+
+  // Every ticker that was ever a member in the window — this is the fetch set,
+  // and it is what makes the correction possible.
+  const universe = new Set();
+  for (const set of membersByYear.values()) for (const t of set) universe.add(t);
+  const allTickers = [...universe].sort();
+  console.log(
+    `    ${allTickers.length} distinct tickers ever in the index (vs ~500 today)`
+  );
 
   const p1 = Math.floor(Date.UTC(firstYear - 1, 10, 1) / 1000);
   const p2 = Math.floor(Date.UTC(lastYear + 1, 0, 15) / 1000);
 
   const rows = [];
   const failed = [];
+  const rejected = [];
   const CONCURRENCY = 6;
 
-  async function fetchOne(m) {
-    const sym = m.symbol.replace(/\./g, "-"); // BRK.B -> BRK-B on Yahoo
+  // Yahoo's adjusted closes for DELISTED tickers are frequently corrupt —
+  // a split or delisting artifact produces impossible values (Titanium Metals
+  // came back as +150,060% for 2010). One such point shifts the mean of ten
+  // thousand observations by fifteen percentage points.
+  //
+  // The threshold is deliberately generous. Genuine distressed recoveries in
+  // the index reach +300–650% (Ford 2009: +337%, AMD 2009: +348%), and those
+  // extremes are the whole point of the skew argument, so they must survive.
+  // Nothing legitimate 11-xes in a single year as an S&P 500 member.
+  const MAX_PLAUSIBLE = 10; // +1000%
+  const MIN_PLAUSIBLE = -1; // cannot lose more than everything
+
+  const plausible = (v, symbol, year) => {
+    if (v > MAX_PLAUSIBLE || v < MIN_PLAUSIBLE) {
+      rejected.push({ symbol, year, value: v });
+      return false;
+    }
+    return true;
+  };
+
+  async function fetchOne(symbol) {
+    // BRK.B -> BRK-B on Yahoo. Delisted tickers often carry a Q/E suffix.
+    const sym = symbol.replace(/\./g, "-");
     try {
       const j = await getJSON(
         `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(sym)}?period1=${p1}&period2=${p2}&interval=1mo`
@@ -262,52 +332,92 @@ async function buildConstituents(firstYear, lastYear) {
       const closes = r.indicators.adjclose?.[0]?.adjclose ?? [];
       const stamps = r.timestamp ?? [];
 
-      // Last usable close of each December, keyed by year.
-      const decClose = new Map();
+      const decClose = new Map(); // year -> December close
+      const lastInYear = new Map(); // year -> last close seen that year
       for (let i = 0; i < stamps.length; i++) {
         if (closes[i] == null || closes[i] <= 0) continue;
         const d = new Date(stamps[i] * 1000);
-        if (d.getUTCMonth() === 11) decClose.set(d.getUTCFullYear(), closes[i]);
+        const y = d.getUTCFullYear();
+        lastInYear.set(y, closes[i]);
+        if (d.getUTCMonth() === 11) decClose.set(y, closes[i]);
       }
 
-      // Dec-to-Dec return for each year the ticker actually traded.
+      const m = meta.get(symbol);
       const returns = years.map((y) => {
+        // Only counted if the company was actually in the index that year.
+        if (!membersByYear.get(y)?.has(symbol)) return null;
         const start = decClose.get(y - 1);
-        const end = decClose.get(y);
-        if (start == null || end == null) return null;
-        return Number(((end - start) / start).toFixed(4));
+        if (start == null) return null;
+        // Prefer the December close; fall back to the last price the company
+        // ever traded at that year, so a mid-year delisting counts as the
+        // loss it was rather than vanishing from the sample.
+        const end = decClose.get(y) ?? lastInYear.get(y);
+        if (end == null) return null;
+        const v = Number(((end - start) / start).toFixed(4));
+        return plausible(v, symbol, y) ? v : null;
       });
 
       if (returns.every((v) => v === null)) throw new Error("no overlap");
 
-      rows.push({ symbol: m.symbol, name: m.name, sector: m.sector, returns });
+      rows.push({
+        symbol,
+        name: m?.name ?? symbol,
+        sector: m?.sector ?? "Unknown (no longer in the index)",
+        returns,
+      });
     } catch {
-      failed.push(m.symbol);
+      failed.push(symbol);
     }
   }
 
-  for (let i = 0; i < members.length; i += CONCURRENCY) {
-    await Promise.all(members.slice(i, i + CONCURRENCY).map(fetchOne));
-    if (i % 60 === 0) process.stdout.write(`    …${i}/${members.length}\r`);
+  for (let i = 0; i < allTickers.length; i += CONCURRENCY) {
+    await Promise.all(allTickers.slice(i, i + CONCURRENCY).map(fetchOne));
+    if (i % 120 === 0) process.stdout.write(`    …${i}/${allTickers.length}\r`);
   }
 
   rows.sort((a, b) => a.symbol.localeCompare(b.symbol));
 
+  // Real index total returns, used to measure whatever bias is left over.
+  const indexReturns = new Map(
+    DAMODARAN_ANNUAL.map(([y, pct]) => [y, pct / 100])
+  );
+
   // Per-year aggregates, computed here so the client never has to.
   const perYear = years.map((y, yi) => {
     const vals = rows.map((r) => r.returns[yi]).filter((v) => v !== null);
+    const inIndex = membersByYear.get(y)?.size ?? 0;
     if (vals.length === 0) {
-      return { year: y, count: 0, positive: 0, positiveShare: null, meanReturn: null, medianReturn: null };
+      return {
+        year: y,
+        count: 0,
+        inIndex,
+        coverage: 0,
+        positive: 0,
+        positiveShare: null,
+        meanReturn: null,
+        medianReturn: null,
+        indexReturn: indexReturns.get(y) ?? null,
+        residualBias: null,
+      };
     }
     const sorted = vals.slice().sort((a, b) => a - b);
     const positive = vals.filter((v) => v > 0).length;
+    const mean = vals.reduce((s, v) => s + v, 0) / vals.length;
+    const idx = indexReturns.get(y) ?? null;
     return {
       year: y,
       count: vals.length,
+      inIndex,
+      coverage: inIndex ? Number((vals.length / inIndex).toFixed(4)) : 0,
       positive,
       positiveShare: Number((positive / vals.length).toFixed(4)),
-      meanReturn: Number((vals.reduce((s, v) => s + v, 0) / vals.length).toFixed(4)),
+      meanReturn: Number(mean.toFixed(4)),
       medianReturn: Number(sorted[Math.floor(sorted.length / 2)].toFixed(4)),
+      indexReturn: idx,
+      // Equal-weighted sample vs the real cap-weighted index. Some gap is
+      // expected (equal weighting genuinely differs from cap weighting); a
+      // large POSITIVE gap is the tell that survivors still dominate.
+      residualBias: idx === null ? null : Number((mean - idx).toFixed(4)),
     };
   });
 
@@ -319,30 +429,58 @@ async function buildConstituents(firstYear, lastYear) {
   const pooledPositive = pooled.filter((v) => v > 0).length;
 
   const usable = perYear.filter((p) => p.count >= 100);
+  const avgCoverage =
+    usable.reduce((s, p) => s + p.coverage, 0) / (usable.length || 1);
+  const avgBias =
+    usable.reduce((s, p) => s + (p.residualBias ?? 0), 0) / (usable.length || 1);
+
   console.log(
-    `\n    ${rows.length} tickers, ${failed.length} unavailable; ${usable.length} years with 100+ companies; ${pooled.length} company-years pooled`
+    `\n    ${rows.length} tickers resolved, ${failed.length} unavailable`
   );
+  console.log(
+    `    ${usable.length} usable years · ${pooled.length} company-years · mean coverage ${(avgCoverage * 100).toFixed(1)}% of actual index members`
+  );
+  console.log(
+    `    residual gap vs real index return: ${(avgBias * 100).toFixed(1)} pp/yr`
+  );
+  if (rejected.length) {
+    console.log(
+      `    rejected ${rejected.length} implausible values (corrupt adjusted closes on delisted tickers):`
+    );
+    for (const r of rejected.slice(0, 6)) {
+      console.log(`      ${r.symbol} ${r.year}  ${(r.value * 100).toFixed(0)}%`);
+    }
+  }
 
   await write("constituents-year.json", {
-    name: `S&P 500 constituent annual total returns, ${firstYear}–${lastYear}`,
+    name: `S&P 500 constituent annual total returns, ${firstYear}–${lastYear} (point-in-time membership)`,
     source:
-      "Yahoo Finance chart API; constituent list from the Datahub S&P 500 companies dataset",
-    sourceUrl: "https://github.com/datasets/s-and-p-500-companies",
+      "Yahoo Finance chart API; point-in-time index membership from fja05680/sp500; company names and sectors from the Datahub S&P 500 companies dataset",
+    sourceUrl: "https://github.com/fja05680/sp500",
+    namesSourceUrl: "https://github.com/datasets/s-and-p-500-companies",
     retrieved: RETRIEVED,
     firstYear,
     lastYear,
     years,
-    units: "decimal fraction (0.1 = +10%); null where the company was not trading",
+    units: "decimal fraction (0.1 = +10%); null where the company was not an index member that year",
     assumptions: [
       "Adjusted closes, so dividends and splits are included",
-      "Membership is the CURRENT index applied retrospectively. This is a survivorship bias and it gets WORSE the further back you look: a 1995 column contains only companies that are still in the index in 2026, so it systematically excludes everything that failed, was acquired or was demoted. Early years flatter the market substantially",
-      "Coverage falls off going back — check `count` for each year before trusting it. Years with fewer than 100 companies are excluded from the year picker",
+      "SURVIVORSHIP: membership is point-in-time, not today's list applied backwards. Each year uses the companies actually in the index that January, including ones that have since failed, been acquired or been demoted",
+      "A company removed part-way through a year is measured to its last traded price, so a collapse counts as the loss it was rather than disappearing from the sample",
+      `Residual bias is measured, not assumed: mean coverage is ${(avgCoverage * 100).toFixed(1)}% of true index members, and the sample's equal-weighted mean sits ${(avgBias * 100).toFixed(1)}pp/yr from the real index return. Some of that gap is equal- vs cap-weighting rather than bias`,
+      "Delisted tickers whose price history is no longer public cannot be recovered, and those are disproportionately the worst outcomes — so the remaining bias still points optimistic",
       "Returns are Dec-to-Dec on monthly closes, so they differ slightly from exact calendar-year figures",
+      `${rejected.length} individual values were rejected as corrupt: Yahoo's adjusted closes for delisted tickers sometimes produce impossible figures (one showed +150,060%). Anything above +1000% or below -100% is dropped. Real distressed recoveries reach +300-650% and are kept, because those extremes are the point`,
       `${failed.length} symbols could not be resolved and are excluded entirely`,
     ],
     derived: {
       tickers: rows.length,
+      rejectedValues: rejected,
       perYear,
+      coverage: {
+        meanShareOfIndex: Number(avgCoverage.toFixed(4)),
+        meanResidualBias: Number(avgBias.toFixed(4)),
+      },
       pooled: {
         observations: pooled.length,
         positive: pooledPositive,

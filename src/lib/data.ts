@@ -49,11 +49,20 @@ export type ConstituentRow = {
 
 export type YearStat = {
   year: number;
+  /** Companies we have a return for. */
   count: number;
+  /** Companies actually in the index that year. */
+  inIndex: number;
+  /** count / inIndex — how much of the real index this sample represents. */
+  coverage: number;
   positive: number;
   positiveShare: number | null;
   meanReturn: number | null;
   medianReturn: number | null;
+  /** The real cap-weighted index return, for comparison. */
+  indexReturn: number | null;
+  /** Sample mean minus index return. Part weighting, part residual bias. */
+  residualBias: number | null;
 };
 export type Drawdown = {
   peakDate: string;
@@ -108,18 +117,27 @@ export const allConstituentYears = constituentsJson.years as number[];
 export const perYearStats = constituentsDerived.perYear as YearStat[];
 
 /**
- * Years with enough companies to be worth showing.
+ * Years with enough of the real index covered to be worth showing.
  *
- * Coverage falls off going back, because membership is the CURRENT index
- * applied retrospectively. Below ~100 companies the cross-section stops
- * meaning anything, so those years are hidden from the picker rather than
- * silently offered as if they were comparable.
+ * Membership is now point-in-time, so a year's sample is drawn from the
+ * companies actually in the index that year. What still varies is how many of
+ * them have recoverable price history: 39% in 1997, 97% in 2025. Below ~100
+ * companies the cross-section stops meaning anything.
  */
 export const MIN_COMPANIES_PER_YEAR = 100;
+
+/** Below this, the year is shown but flagged as thin. */
+export const GOOD_COVERAGE = 0.7;
 
 export const constituentYears = perYearStats
   .filter((s) => s.count >= MIN_COMPANIES_PER_YEAR)
   .map((s) => s.year);
+
+/** How much of the true index the sample represents, averaged over usable years. */
+export const coverageStats = constituentsDerived.coverage as {
+  meanShareOfIndex: number;
+  meanResidualBias: number;
+};
 
 export const latestConstituentYear =
   constituentYears[constituentYears.length - 1];

@@ -3,7 +3,7 @@
   "source": "Robert J. Shiller, Yale University — 'Irrational Exuberance' long-run dataset, via the Datahub curated mirror",
   "sourceUrl": "http://www.econ.yale.edu/~shiller/data.htm",
   "mirrorUrl": "https://github.com/datasets/s-and-p-500",
-  "retrieved": "2026-08-01",
+  "retrieved": "2026-08-06",
   "units": "index level; dividend in index points per year; CPI 1982-84 = 100",
   "dataEnds": "2023-09-01",
   "assumptions": [

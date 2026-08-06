@@ -24,7 +24,8 @@ function getSnapshot(): Theme {
 }
 
 function getServerSnapshot(): Theme {
-  // Matches the default on <html>; the inline script corrects it before paint.
+  // Night mode is the default everywhere, so the server and the inline script
+  // agree and there is no flash.
   return "dark";
 }
 
@@ -47,8 +48,9 @@ export function ThemeToggle() {
     <button
       type="button"
       onClick={toggle}
-      className="grid size-11 place-items-center rounded-md text-text-muted transition-colors hover:bg-surface hover:text-text"
-      aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
+      className="flex min-h-11 items-center gap-2 rounded-md border border-border px-3 text-text-muted transition-all hover:-translate-y-px hover:bg-surface hover:text-text"
+      aria-label={`Switch to ${theme === "dark" ? "day" : "night"} mode`}
+      title={`Switch to ${theme === "dark" ? "day" : "night"} mode`}
     >
       <svg
         viewBox="0 0 24 24"
@@ -69,6 +71,9 @@ export function ThemeToggle() {
           <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
         )}
       </svg>
+      <span className="hidden text-xs font-bold uppercase tracking-wider sm:inline">
+        {theme === "dark" ? "Night" : "Day"}
+      </span>
     </button>
   );
 }

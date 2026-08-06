@@ -5,6 +5,7 @@ import { blackjackSession } from "@/lib/sim/casino";
 import { casinoMeta, BLACKJACK_EDGE } from "@/lib/data";
 import { ExperienceFrame } from "@/components/ui/experience-frame";
 import { DataTable } from "@/components/ui/data-table";
+import { BlackjackTable } from "./blackjack-table";
 
 const money = (n: number) =>
   n.toLocaleString("en-US", {
@@ -29,6 +30,7 @@ const INTUITION_EDGE = 0.02;
 export function Blackjack() {
   const [hours, setHours] = useState(4);
   const [bet, setBet] = useState(25);
+  const [seed, setSeed] = useState(8123);
   const handsPerHour = 70;
 
   const strategy = blackjackSession(handsPerHour, hours, bet, BLACKJACK_EDGE);
@@ -40,8 +42,16 @@ export function Blackjack() {
       title="A printed card, followed exactly"
       intro="Blackjack basic strategy is a small laminated table. Following it without deviation cuts the house edge by most of its size — the discipline, not the insight, is what does the work."
       datasets={[casinoMeta]}
+      seed={seed}
+      onReseed={() => setSeed((s) => s + 1)}
     >
-      <div className="grid gap-5 sm:grid-cols-2">
+      <BlackjackTable key={seed} seed={seed} />
+
+      <h3 className="mt-8 text-xs font-bold uppercase tracking-widest text-text-subtle">
+        And what that edge costs over a session
+      </h3>
+
+      <div className="mt-4 grid gap-5 sm:grid-cols-2">
         <div>
           <label htmlFor="hours" className="flex items-baseline justify-between text-sm">
             <span className="text-text-muted">Hours at the table</span>
